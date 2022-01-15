@@ -1,14 +1,57 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+import json
+from django.db.utils import IntegrityError
 
-from .models import User
+from .models import User, Post, Like, Follow
 
 
 def index(request):
-    return render(request, "network/index.html")
+    if request.method == "POST":
+        if request.user.is_authenticated:
+            user = request.user
+            text = request.POST["text"]
+            post = Post(user=user, text=text)
+            post.save()
+            return HttpResponseRedirect(reverse("index"))
+
+        else:
+            return render(request, "network/login.html")
+    
+    if request.method == "PUT":
+        if request.user.is_authenticated:
+            data = json.loads(request.body)
+            user = request.user
+            post_id = data["id"]
+            post = Post.objects.get(id=post_id)
+            if user == post.user:
+                return JsonResponse({}, status=400)
+            try:
+                like = Like(user=user, post=post)
+                like.save()
+            except IntegrityError:
+                like = Like.objects.get(user=user, post=post)
+                like.delete()
+            count = post.like_set.all().count()
+            return JsonResponse({"id": post_id, "count": count}, status=200)
+        else:
+            return JsonResponse({}, status=400)
+    
+    posts = Post.objects.all().order_by("-time_stamp")
+    context = {
+            "posts": posts,
+        }
+    if request.user.is_authenticated:
+        likes = request.user.like_set.all()
+        liked_posts = [like.post for like in likes]
+        context["liked_posts"] = liked_posts
+        
+    return render(request, "network/index.html", context)
+    
+
 
 
 def login_view(request):

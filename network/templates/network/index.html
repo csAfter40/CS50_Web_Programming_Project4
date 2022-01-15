@@ -1,5 +1,41 @@
 {% extends "network/layout.html" %}
 
 {% block body %}
-    TODO
+
+<h2 class="mt-4" id="pageTitle">Page title</h2>
+<!-- New post form -->
+<div class="my-3 p-3 bg-light" id="newPostDiv">
+    <form method="POST" action="{% url 'index' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+          <h3>New Post</h3>
+          <textarea maxlength="280" class="form-control" id="postText" name="text" rows="5"></textarea>
+        </div>
+        <button id="sendPost" type="submit" class="btn btn-primary">Send</button>
+      </form>
+</div>
+{% csrf_token %}
+
+{% for post in posts %}
+
+  <!-- <div class="card" style="width: 18rem;"> -->
+  <div class="card my-3 bg-light" id="post{{post.id}}">
+    <div class="card-body">
+      <h5 class="card-title">{{post.user}}</h5>
+      <p class="card-text">{{post.text}}</p>
+      <h6 class="card-subtitle mb-2 text-muted">{{post.time_stamp}}</h6>
+      {% if post in liked_posts %}
+      <a href="#" class="card-link text-danger text-decoration-none"><i name="{{post.id}}" class="bi bi-suit-heart-fill like-heart"> </i><span id="like-count-{{post.id}}" class="like-num">{{post.likes}}</span></a>
+      {% else %}
+      <a href="#" class="card-link text-danger text-decoration-none"><i name="{{post.id}}" class="bi bi-suit-heart like-heart"> </i><span id="like-count-{{post.id}}" class="like-num">{{post.likes}}</span></a>
+      {% endif %}
+      {% if post.user == request.user %}
+        <a href="#" class="card-link"><button class="btn btn-outline-primary py-0">Edit</button> </a>  
+      {% endif %}
+      
+    </div>
+  </div>
+
+{% endfor %}
+
 {% endblock %}
