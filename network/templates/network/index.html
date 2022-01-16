@@ -2,18 +2,42 @@
 
 {% block body %}
 
-<h2 class="mt-4" id="pageTitle">Page title</h2>
-<!-- New post form -->
-<div class="my-3 p-3 bg-light" id="newPostDiv">
-    <form method="POST" action="{% url 'index' %}">
-        {% csrf_token %}
-        <div class="mb-3">
-          <h3>New Post</h3>
-          <textarea maxlength="280" class="form-control" id="postText" name="text" rows="5"></textarea>
-        </div>
-        <button id="sendPost" type="submit" class="btn btn-primary">Send</button>
-      </form>
+{% if view_user %}
+<div class=" row justify-content-center">
+  <div class="card my-3 bg-info align-self-center text-center col-6" id="post{{post.id}}">
+    <div class="card-body">
+      <h2>{{view_user}}</h2>
+      <p>Followers: </p>
+      <p>Following: </p>
+      {% if request.user != view_user%}
+        {% if follow %}
+          <button name={{view_user}} id="followButton" class="btn btn-danger">Unfollow</button>
+        {% else %}
+          <button name={{view_user}} id="followButton" class="btn btn-primary">Follow</button>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
 </div>
+
+{% else %}
+
+  <h2 class="mt-4" id="pageTitle">Page title</h2>
+  <!-- New post form -->
+  <div class="my-3 p-3 bg-light" id="newPostDiv">
+      <form method="POST" action="{% url 'index' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <h3>New Post</h3>
+            <textarea maxlength="280" class="form-control" id="postText" name="text" rows="5"></textarea>
+          </div>
+          <button id="sendPost" type="submit" class="btn btn-primary">Send</button>
+        </form>
+  </div>
+
+
+{% endif %}
+
 {% csrf_token %}
 
 {% for post in posts %}
@@ -21,7 +45,7 @@
   <!-- <div class="card" style="width: 18rem;"> -->
   <div class="card my-3 bg-light" id="post{{post.id}}">
     <div class="card-body">
-      <h5 class="card-title">{{post.user}}</h5>
+      <a href="user/{{post.user}}"><h5 class="card-title">{{post.user}}</h5></a>
       <p class="card-text">{{post.text}}</p>
       <h6 class="card-subtitle mb-2 text-muted">{{post.time_stamp}}</h6>
       {% if post in liked_posts %}

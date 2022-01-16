@@ -5,11 +5,12 @@ from django.shortcuts import render
 from django.urls import reverse
 import json
 from django.db.utils import IntegrityError
+from django.contrib.auth.decorators import login_required
 
 from .models import User, Post, Like, Follow
 
 
-def index(request):
+def index(request, username = None):
     if request.method == "POST":
         if request.user.is_authenticated:
             user = request.user
@@ -39,21 +40,43 @@ def index(request):
             return JsonResponse({"id": post_id, "count": count}, status=200)
         else:
             return JsonResponse({}, status=400)
-    
-    posts = Post.objects.all().order_by("-time_stamp")
+    view_user = None
+    follow = None
+    if username:
+        view_user = User.objects.get(username=username)
+        posts = Post.objects.filter(user=view_user).order_by("-time_stamp")
+        try: 
+            follow = Follow.objects.get(follower=request.user, following=view_user)
+        except Follow.DoesNotExist:
+            follow = None
+    else:
+        posts = Post.objects.all().order_by("-time_stamp")
     context = {
             "posts": posts,
+            "view_user": view_user,
+            "follow": follow
         }
     if request.user.is_authenticated:
         likes = request.user.like_set.all()
         liked_posts = [like.post for like in likes]
         context["liked_posts"] = liked_posts
-        
     return render(request, "network/index.html", context)
     
-
-
-
+# @login_required(login_url=reverse('login'))
+def follow(request, username):
+    if request.method == "PUT":
+        follower_user = request.user
+        following_user = User.objects.get(username=username)
+        if following_user == follower_user:
+            return JsonResponse({}, status=400)
+        try: 
+            follow = Follow(follower=follower_user, following=following_user)
+            follow.save()
+        except IntegrityError:
+            follow = Follow.objects.get(follower=follower_user, following=following_user)
+            follow.delete()
+        return JsonResponse({}, status=200)
+        
 def login_view(request):
     if request.method == "POST":
 
