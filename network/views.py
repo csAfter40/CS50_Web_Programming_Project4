@@ -7,6 +7,7 @@ import json
 from django.db.utils import IntegrityError
 from django.contrib.auth.decorators import login_required
 from sympy import re
+from django.core.paginator import Paginator
 
 from .models import User, Post, Like, Follow
 
@@ -59,8 +60,14 @@ def index(request, username = None, following_page=False):
     else:
         posts = Post.objects.all().order_by("-time_stamp")
         page_title = "All posts"
+
+        # Pagination code
+    posts_per_page = 10
+    post_paginator = Paginator(posts, posts_per_page)
+    page_number = request.GET.get("page", 1)
+    page = post_paginator.get_page(page_number)
     context = {
-            "posts": posts,
+            "page": page,
             "view_user": view_user,
             "follow": follow,
             "followers": Follow.objects.filter(following=view_user).count(),
